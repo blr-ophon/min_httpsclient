@@ -1,0 +1,3 @@
+[submodule "lib/min_httpclient"]
+	path = lib/min_httpclient
+	url = https://github.com/blr-ophon/min_httpclient
