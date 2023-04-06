@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[]){
     if(argc < 2){
-        printf("Usage: minhttp <url>\n");
+        fprintf(stderr, "Usage: minhttp <url>\n");
         return -1;
     }
 
@@ -25,12 +25,20 @@ int main(int argc, char *argv[]){
     struct parsed_url url;
     parse_url(&url, argv[1]);
     
-    //Connect socket to remote IP
+    //Initialize TCP connection
     int sockfd = socket_init(&url);
     if(sockfd < 0){
-        printf("Hostname can't be reached. Connection failed\n");
+        fprintf(stderr,"Hostname can't be reached. Connection failed\n");
         exit(EXIT_FAILURE);
     }
+
+    //Initialize TLS connection
+    SSL *ssl = TLS_init(ctx, &url, sockfd);
+    if(!ssl){ 
+        fprintf(stderr, "TLS connection failed\n"); 
+        exit(EXIT_FAILURE);
+    }
+    SSL_CTX_free(ctx);
 
     char send_msg_buf[8182] = {0};
     char recv_msg_buf[8192] = {0};      //to receive each individual packet received
@@ -91,6 +99,9 @@ int main(int argc, char *argv[]){
     httpmsg_handleResponse(full_recv_msg, &url);
 
     free(full_recv_msg);
+
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
     close(sockfd);
 }
 
@@ -155,3 +166,4 @@ void print_addr(struct addrinfo *addr){
         }
         printf("%s\n%s\n", host_buf, serv_buf);
 }
+

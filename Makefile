@@ -4,7 +4,7 @@ CFLAGS = -std=gnu99 -g -Wall -Wextra -pedantic $(OPT)
 
 INCLUDES= -I./include -I./lib/min_httpclient
 LIBHHL := ./lib/min_httpclient/hhl.so
-LIBRARIES= -L. ${LIBHHL} -lSDL2 
+LIBRARIES= -L. ${LIBHHL} -lcrypto -lssl
 
 CFILES_DIR := ./src
 BUILD_DIR := ./build
@@ -23,7 +23,7 @@ ${LIBHHL}:
 
 ${BUILD_DIR}/%.o: ${CFILES_DIR}/%.c
 	mkdir -p $(dir $@)
-	$(CC) ${CFLAGS} ${INCLUDES} -c $< -o $@
+	$(CC) ${CFLAGS} ${INCLUDES} -c $< -o $@ 
 
 clean:
 	rm -rf ${OBJECTS} 
