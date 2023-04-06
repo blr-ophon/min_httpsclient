@@ -19,4 +19,6 @@ SSL *TLS_init(SSL_CTX *ctx, struct parsed_url *url, int sockfd);
 
 void show_cert_info(SSL *ssl);
 
+void verification_results(SSL *ssl);
+
 #endif

@@ -1,7 +1,14 @@
 #include "tls_conn.h"
 
+//TODO: Must include a list of trusted root certificates
+
 //Create ssl struct and initializes TLS connection to the url hostname through specified socket
 SSL *TLS_init(SSL_CTX *ctx, struct parsed_url *url, int sockfd){ 
+    //Verify certificates using trusted list
+    if(!SSL_CTX_load_verify_locations(ctx, "./certs/cacert.pem", 0)){
+        ERR_print_errors_fp(stderr);
+    }
+
     //Create SSL struct from context
     SSL *ssl = SSL_new(ctx);        
     if(!ssl){
@@ -50,4 +57,19 @@ void show_cert_info(SSL *ssl){
         OPENSSL_free(rv);
     }
     X509_free(cert);
+
+    //Print results from certificate validation
+    verification_results(ssl);
+
 }
+
+void verification_results(SSL *ssl){
+    //Show validation results
+    long vp = SSL_get_verify_result(ssl);
+    if(vp == X509_V_OK){
+        printf("Certificates validation OK\n");
+    }else{
+        printf("Certificates validation FAILED\n");
+    }
+}
+
