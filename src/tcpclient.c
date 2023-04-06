@@ -1,6 +1,7 @@
 #include "tcpclient.h"
 //TODO: Remove code from main
 
+#define HTTPS_PORT "443"
 
 int main(int argc, char *argv[]){
     if(argc < 2){
@@ -50,50 +51,36 @@ int main(int argc, char *argv[]){
     timeout.tv_sec = 0;
     timeout.tv_usec = 200000;
 
+    //Prompt for method and send HTTP query
     printf("Enter Method: \n");
+    char method[10];
+    fgets(method, sizeof(method), stdin);
+    method[strlen(method)-1] = '\0';    //remove \n
+    httpmsg_setHeader(&url, method, send_msg_buf);
+    int bytes_sent = SSL_write(ssl, send_msg_buf, strlen(send_msg_buf));
+    if(bytes_sent == -1){
+        perror("recv");
+    }
 
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(sockfd, &readfds);
-    FD_SET(0, &readfds);        //for stdin
-
-    //while(!isQuitMessage(send_msg_buf)){
-    while(1){
-        fd_set cpy_fds = readfds;
-
-        if(select(sockfd+1, &cpy_fds, 0, 0, &timeout) < 0){
-            perror("select");
-        }
-
-        if(FD_ISSET(sockfd, &cpy_fds)){ //receive message 
-            int recv_bytes = recv(sockfd, recv_msg_buf, sizeof(recv_msg_buf), 0);
-            recv_msg_buf[recv_bytes] = '\0';
-            if(recv_bytes < 1){
-                printf("\n---Server connection closed\n");
-                FD_CLR(sockfd, &readfds);
-                break;
-            }else{
-                int temp = received_count;
-                received_count += recv_bytes;
-                full_recv_msg = realloc(full_recv_msg, received_count);
-                memcpy(&full_recv_msg[temp], recv_msg_buf, recv_bytes);
-            }
-        }
-
-        if(FD_ISSET(0, &cpy_fds)){
-            //prompt for method
-            char method[10];
-            fgets(method, sizeof(method), stdin);
-            method[strlen(method)-1] = '\0';    //remove \n
-            httpmsg_setHeader(&url, method, send_msg_buf);
-
-            int bytes_sent = send(sockfd, send_msg_buf, strlen(send_msg_buf), 0);
-            if(bytes_sent == -1){
-                perror("recv");
-            }
+    //Receive messages until server closes connection
+    for(;;){
+        int recv_bytes = SSL_read(ssl, recv_msg_buf, sizeof(recv_msg_buf));
+        recv_msg_buf[recv_bytes] = '\0';
+        if(recv_bytes < 1){
+            printf("\n---Server connection closed\n");
+            break;
+        }else{
+            int temp = received_count;
+            received_count += recv_bytes;
+            full_recv_msg = realloc(full_recv_msg, received_count);
+            memcpy(&full_recv_msg[temp], recv_msg_buf, recv_bytes);
         }
     }
-    full_recv_msg[received_count] = '\0';
+
+
+    if(full_recv_msg){
+        full_recv_msg[received_count] = '\0';
+    }
     printf("\n---Received response:\n\n%s\n", full_recv_msg);
 
     httpmsg_handleResponse(full_recv_msg, &url);
@@ -114,7 +101,7 @@ int socket_init(struct parsed_url *url){
     hints.ai_socktype = SOCK_STREAM;
 
     struct addrinfo *addresses = NULL;
-    int rv = getaddrinfo(url->hostname, url->port, &hints, &addresses);
+    int rv = getaddrinfo(url->hostname, HTTPS_PORT , &hints, &addresses);
     if(rv < 0){
         printf("getaddrinfo: %s\n", gai_strerror(rv));
         return -1;
