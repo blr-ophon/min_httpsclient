@@ -57,10 +57,6 @@ int main(int argc, char *argv[]){
     char *full_recv_msg = NULL;         //to store complete message from arrived packets
     int received_count = 0;
 
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 200000;
-
     //Prompt for HTTP method and create header
     printf("Enter Method: \n");
     char method[10];
