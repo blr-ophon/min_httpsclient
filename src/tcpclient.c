@@ -34,12 +34,22 @@ int main(int argc, char *argv[]){
     }
 
     //Initialize TLS connection
-    SSL *ssl = TLS_init(ctx, &url, sockfd);
-    if(!ssl){ 
-        fprintf(stderr, "TLS connection failed\n"); 
-        exit(EXIT_FAILURE);
+    SSL *ssl = NULL;
+    if(strstr(url.protocol, "https") && (strlen(url.protocol) == 5)){
+        ssl = TLS_init(ctx, &url, sockfd);
+        if(!ssl){ 
+            fprintf(stderr, "TLS connection failed. Switching to HTTP\n"); 
+            get_http_ver(&url); //switch url protocol to http and port to 80
+            //recreate socket for HTTP version
+            close(sockfd);
+            sockfd = socket_init(&url);
+            if(sockfd < 0){
+                fprintf(stderr,"Hostname can't be reached. Connection failed\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+        SSL_CTX_free(ctx);
     }
-    SSL_CTX_free(ctx);
 
     char send_msg_buf[8182] = {0};
     char recv_msg_buf[8192] = {0};      //to receive each individual packet received
@@ -51,25 +61,42 @@ int main(int argc, char *argv[]){
     timeout.tv_sec = 0;
     timeout.tv_usec = 200000;
 
-    //Prompt for method and send HTTP query
+    //Prompt for HTTP method and create header
     printf("Enter Method: \n");
     char method[10];
     fgets(method, sizeof(method), stdin);
     method[strlen(method)-1] = '\0';    //remove \n
     httpmsg_setHeader(&url, method, send_msg_buf);
-    int bytes_sent = SSL_write(ssl, send_msg_buf, strlen(send_msg_buf));
+
+    //send HTTP query via TLS or normally
+    int bytes_sent = 0;
+    if(ssl){//If there is TLS connection
+        bytes_sent = SSL_write(ssl, send_msg_buf, strlen(send_msg_buf));
+    }else{
+        bytes_sent = send(sockfd, send_msg_buf, strlen(send_msg_buf), 0);
+    }
+
     if(bytes_sent == -1){
-        perror("recv");
+        fprintf(stderr, "Error sending query\n");
     }
 
     //Receive messages until server closes connection
     for(;;){
-        int recv_bytes = SSL_read(ssl, recv_msg_buf, sizeof(recv_msg_buf));
+        int recv_bytes = 0;
+        if(ssl){//if there is TLS connection
+            recv_bytes = SSL_read(ssl, recv_msg_buf, sizeof(recv_msg_buf));
+        }else{
+            recv_bytes = recv(sockfd, recv_msg_buf, sizeof(recv_msg_buf), 0);
+        }
+
         recv_msg_buf[recv_bytes] = '\0';
+        printf("%s\n", recv_msg_buf);
+
         if(recv_bytes < 1){
             printf("\n---Server connection closed\n");
             break;
         }else{
+            //allocate more byte to full received message and append message to it
             int temp = received_count;
             received_count += recv_bytes;
             full_recv_msg = realloc(full_recv_msg, received_count);
@@ -101,7 +128,7 @@ int socket_init(struct parsed_url *url){
     hints.ai_socktype = SOCK_STREAM;
 
     struct addrinfo *addresses = NULL;
-    int rv = getaddrinfo(url->hostname, HTTPS_PORT , &hints, &addresses);
+    int rv = getaddrinfo(url->hostname, url->port, &hints, &addresses);
     if(rv < 0){
         printf("getaddrinfo: %s\n", gai_strerror(rv));
         return -1;

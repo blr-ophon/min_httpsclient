@@ -73,3 +73,13 @@ void verification_results(SSL *ssl){
     }
 }
 
+void get_http_ver(struct parsed_url *url){
+    free(url->protocol);
+    url->protocol = calloc(5, 1);
+    strncpy(url->protocol, "http", 5);
+    free(url->port);
+    url->port = calloc(3, 1);
+    strncpy(url->protocol, "80", 3);
+}
+
+

@@ -21,4 +21,6 @@ void show_cert_info(SSL *ssl);
 
 void verification_results(SSL *ssl);
 
+void get_http_ver(struct parsed_url *url);
+
 #endif
