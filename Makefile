@@ -37,7 +37,7 @@ clean:
 	rm -rf ./certs
 
 testrun: ${EXEC}
-	$^ www.example.com
+	$^ www.google.com
 
 debug: ${EXEC}
 	cgdb $^ 
