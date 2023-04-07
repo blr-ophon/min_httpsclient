@@ -114,8 +114,10 @@ int main(int argc, char *argv[]){
 
     free(full_recv_msg);
 
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
+    if(ssl){
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+    }
     close(sockfd);
 }
 
