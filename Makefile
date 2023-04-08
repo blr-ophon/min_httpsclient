@@ -19,6 +19,7 @@ ${EXEC}: ${OBJECTS} ${LIBHHL} certs
 	$(CC) ${CFLAGS} ${INCLUDES} ${OBJECTS} -o $@ ${LIBRARIES}
 
 ${LIBHHL}:
+	git submodule update --recursive --remote
 	cd ./lib/min_httpclient && make 
 	cd ..
 
