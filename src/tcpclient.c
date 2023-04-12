@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
     char recv_msg_buf[8192] = {0};      //to receive each individual packet received
 
     char *full_recv_msg = NULL;         //to store complete message from arrived packets
-    int received_count = 0;
+    unsigned long received_count = 0;
 
     //Prompt for HTTP method and create header
     printf("Enter Method: \n");
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
 
     //Receive messages until server closes connection
     for(;;){
-        int recv_bytes = 0;
+        unsigned int recv_bytes = 0;
         if(ssl){//if there is TLS connection
             recv_bytes = SSL_read(ssl, recv_msg_buf, sizeof(recv_msg_buf));
         }else{
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
             break;
         }else{
             //allocate more byte to full received message and append message to it
-            int temp = received_count;
+            unsigned long temp = received_count;
             received_count += recv_bytes;
             full_recv_msg = realloc(full_recv_msg, received_count);
             memcpy(&full_recv_msg[temp], recv_msg_buf, recv_bytes);
