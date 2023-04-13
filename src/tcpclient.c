@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
 
     //Receive messages until server closes connection
     for(;;){
-        unsigned int recv_bytes = 0;
+        int recv_bytes = 0;
         if(ssl){//if there is TLS connection
             recv_bytes = SSL_read(ssl, recv_msg_buf, sizeof(recv_msg_buf));
         }else{
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
         }
 
         recv_msg_buf[recv_bytes] = '\0';
-        printf("%s\n", recv_msg_buf);
+        //printf("%s\n", recv_msg_buf);
 
         if(recv_bytes < 1){
             printf("\n---Server connection closed\n");
@@ -95,6 +95,7 @@ int main(int argc, char *argv[]){
             //allocate more byte to full received message and append message to it
             unsigned long temp = received_count;
             received_count += recv_bytes;
+            printf("--Received %d bytes\nTotal: %lu\n", recv_bytes, received_count);
             full_recv_msg = realloc(full_recv_msg, received_count);
             memcpy(&full_recv_msg[temp], recv_msg_buf, recv_bytes);
         }

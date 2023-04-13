@@ -13,9 +13,11 @@ CFILES := $(wildcard ./src/*.c)
 OBJECTS := $(CFILES:$(CFILES_DIR)/%.c=$(BUILD_DIR)/%.o)
 EXEC := ./bin/min_https
 
+RESP_DIR := ./responses
 
 ${EXEC}: ${OBJECTS} ${LIBHHL} certs
 	mkdir -p $(dir $@)
+	mkdir -p ${RESP_DIR}
 	$(CC) ${CFLAGS} ${INCLUDES} ${OBJECTS} -o $@ ${LIBRARIES}
 
 ${LIBHHL}:
@@ -35,6 +37,7 @@ clean:
 	rm -rf ${OBJECTS} 
 	rm -rf ${LIBHHL} 
 	rm -rf ${EXEC}
+	rm -rf ${RESP_DIR}
 	rm -rf ./certs
 
 testrun: ${EXEC}
